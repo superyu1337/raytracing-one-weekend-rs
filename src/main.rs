@@ -20,11 +20,11 @@ mod camera;
 
 const THREADS: usize = 8;
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
-pub const IMAGE_WIDTH: usize = 3840;
+pub const IMAGE_WIDTH: usize = 1920;
 pub const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as usize;
-pub const SAMPLE_COUNT: i32 = 128;
+pub const SAMPLE_COUNT: i32 = 32;
 const RAY_DEPTH: usize = 8;
-const DENOISER: bool = false;
+const DENOISER: bool = true;
 
 //static mut PIXELS: [(f64, f64, f64); IMAGE_WIDTH * IMAGE_HEIGHT] = [(0f64, 0f64, 0f64); IMAGE_WIDTH * IMAGE_HEIGHT];
 
