@@ -1,5 +1,7 @@
 extern crate oidn;
 
+use std::sync::Arc;
+
 use glam::DVec3;
 use glam::UVec2;
 use threadpool::ThreadPool;
@@ -20,18 +22,18 @@ mod camera;
 
 const THREADS: usize = 8;
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
-pub const IMAGE_WIDTH: usize = 1920;
+pub const IMAGE_WIDTH: usize = 3840;
 pub const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as usize;
-pub const SAMPLE_COUNT: i32 = 32;
+pub const SAMPLE_COUNT: i32 = 16;
 const RAY_DEPTH: usize = 8;
-const DENOISER: bool = true;
+const DENOISER: bool = false;
 
 //static mut PIXELS: [(f64, f64, f64); IMAGE_WIDTH * IMAGE_HEIGHT] = [(0f64, 0f64, 0f64); IMAGE_WIDTH * IMAGE_HEIGHT];
 
 struct ThreadJob {
     pixel: UVec2,
-    world: Box<HittableList<Sphere>>,
-    camera: Camera,
+    world: Arc<HittableList<Sphere>>,
+    camera: Arc<Camera>,
 }
 
 impl ThreadJob {
@@ -62,10 +64,11 @@ fn main() {
     world.add(Sphere::new(Point3::new(20.5, 15.0, -25.0), 20.0));
     world.add(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
 
-    let world_ptr = Box::new(world);
+    let world_ptr = Arc::new(world);
 
     // camera
     let camera = Camera::new();
+    let camera_ptr = Arc::new(camera);
 
     // render
     eprintln!("Creating jobs!");
@@ -77,7 +80,7 @@ fn main() {
             jobs.push(ThreadJob { 
                 pixel: UVec2::new(j as u32, i as u32),
                 world: world_ptr.clone(), 
-                camera: camera,
+                camera: camera_ptr.clone(),
             });
         }
     }
@@ -114,10 +117,10 @@ fn main() {
     eprintln!("Rendering done! Took {}s", render_time.as_millis() as f64 / 1000.0);
     eprintln!("Writing to file now!");
     
-    let mut image: Vec<f32> = vec![];
-
     let mut data: Vec<(UVec2, (DVec3, DVec3), i32)> = rx.iter().take(jobs_len).collect();
     data.sort_by(|a, b| b.2.cmp(&a.2));
+
+    let mut image: Vec<f32> = vec![];
 
     for response in data {
         image.push(response.1.0.x as f32);

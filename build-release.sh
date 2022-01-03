@@ -1,2 +1,2 @@
 #!/bin/bash
-OIDN_DIR=/usr/lib/libOpenImageDenoise.so cargo build --release
+OIDN_DIR=./lib cargo build --release
