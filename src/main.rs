@@ -24,9 +24,9 @@ const THREADS: usize = 8;
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 pub const IMAGE_WIDTH: usize = 3840;
 pub const IMAGE_HEIGHT: usize = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as usize;
-pub const SAMPLE_COUNT: i32 = 16;
+pub const SAMPLE_COUNT: i32 = 128;
 const RAY_DEPTH: usize = 8;
-const DENOISER: bool = false;
+const DENOISER: bool = true;
 
 //static mut PIXELS: [(f64, f64, f64); IMAGE_WIDTH * IMAGE_HEIGHT] = [(0f64, 0f64, 0f64); IMAGE_WIDTH * IMAGE_HEIGHT];
 
@@ -71,7 +71,7 @@ fn main() {
     let camera_ptr = Arc::new(camera);
 
     // render
-    eprintln!("Creating jobs!");
+    println!("Creating jobs!");
 
     let mut jobs: Vec<ThreadJob> = vec![];
 
@@ -91,13 +91,13 @@ fn main() {
 
     let render_start = std::time::Instant::now();
 
-    eprintln!("Render queue created.");
-    eprintln!("Picture Size: {}x{}", IMAGE_WIDTH, IMAGE_HEIGHT);
-    eprintln!("Samples: {}", SAMPLE_COUNT);
-    eprintln!("Light Bounces: {}", RAY_DEPTH);
-    eprintln!("Jobs: {}", jobs_len);
-    eprintln!("Threads: {}", THREADS);
-    eprintln!("Starting to render now!");
+    println!("Render queue created.");
+    println!("Picture Size: {}x{}", IMAGE_WIDTH, IMAGE_HEIGHT);
+    println!("Samples: {}", SAMPLE_COUNT);
+    println!("Light Bounces: {}", RAY_DEPTH);
+    println!("Jobs: {}", jobs_len);
+    println!("Threads: {}", THREADS);
+    println!("Starting to render now!");
 
     let mut counter = 0;
 
@@ -114,9 +114,10 @@ fn main() {
     let render_end = std::time::Instant::now();
     let render_time = render_end.duration_since(render_start);
 
-    eprintln!("Rendering done! Took {}s", render_time.as_millis() as f64 / 1000.0);
-    eprintln!("Writing to file now!");
-    
+    let rays_per_milli = (jobs_len * (SAMPLE_COUNT as usize) * RAY_DEPTH) / render_time.as_millis() as usize;
+    println!("Rendering done! Took {}s", render_time.as_millis() as f64 / 1000.0);
+    println!("Rays per millisecond: {}", rays_per_milli);
+
     let mut data: Vec<(UVec2, (DVec3, DVec3), i32)> = rx.iter().take(jobs_len).collect();
     data.sort_by(|a, b| b.2.cmp(&a.2));
 
@@ -129,7 +130,7 @@ fn main() {
     }
 
     if DENOISER {
-        eprintln!("Starting denoiser pass");
+        println!("Starting denoiser pass");
         let mut filter_output = vec![0.0f32; image.len()];
         let device = oidn::Device::new();
 
@@ -140,7 +141,7 @@ fn main() {
             .expect("Filter config error!");
 
         if let Err(e) = device.get_error() {
-            eprintln!("Error denoising image: {}", e.1);
+            println!("Error denoising image: {}", e.1);
         }
 
         let mut image_data: Vec<u8> = vec![];
@@ -149,6 +150,7 @@ fn main() {
             image_data.push(f32_to_u8(clr));
         }
 
+        println!("Writing to file now!");
         write_to_image(image_data);
     } else {
         let mut image_data: Vec<u8> = vec![];
@@ -157,7 +159,8 @@ fn main() {
             image_data.push(f32_to_u8(clr));
         }
 
+        println!("Writing to file now!");
         write_to_image(image_data);
     }
-    eprintln!("Done!");
+    println!("Done!");
 }

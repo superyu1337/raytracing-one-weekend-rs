@@ -32,7 +32,11 @@ pub fn write_to_image(image_data: Vec<u8>) {
     let image = image::RgbImage::from_vec(IMAGE_WIDTH as u32, IMAGE_HEIGHT as u32, image_data)
         .expect("Create image buffer from image data");
 
-    image.save("./image.png").expect("Save image");
+
+    let path = std::path::Path::new(&std::env::current_dir().unwrap()).join("image.png");
+
+    image.save(path.as_path()).expect("Save image");
+    println!("Wrote file to: {}", path.as_path().to_str().unwrap())
 }
 
 
